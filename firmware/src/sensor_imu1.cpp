@@ -35,6 +35,19 @@ static USFSMAX s_imu1(&s_i2c, 0);
 // Data handlers
 static SemaphoreHandle_t s_imu1Data_mutex = nullptr; // protect local snapshot `s_latest`
 static imu1_reading_t s_latest = {0};
+
+static constexpr float kImu1Rot[9] = {IMU1_R00, IMU1_R01, IMU1_R02,
+                                      IMU1_R10, IMU1_R11, IMU1_R12,
+                                      IMU1_R20, IMU1_R21, IMU1_R22};
+static constexpr float kImu1QuatB2S[4] = {IMU1_Q_B2S_W, IMU1_Q_B2S_X,
+                                         IMU1_Q_B2S_Y, IMU1_Q_B2S_Z};
+static inline void quatMultiply(const float a[4], const float b[4], float out[4])
+{
+  out[0] = a[0] * b[0] - a[1] * b[1] - a[2] * b[2] - a[3] * b[3];
+  out[1] = a[0] * b[1] + a[1] * b[0] + a[2] * b[3] - a[3] * b[2];
+  out[2] = a[0] * b[2] - a[1] * b[3] + a[2] * b[0] + a[3] * b[1];
+  out[3] = a[0] * b[3] + a[1] * b[2] - a[2] * b[1] + a[3] * b[0];
+}
 //* ==========================
 
 //* ===== Task: IMU1 (USFSMAX) =====
@@ -145,6 +158,25 @@ static void task_sensor_imu1(void *param)
     r.accel_g[0] = accADC[0][0] * g_per_count;
     r.accel_g[1] = accADC[0][1] * g_per_count;
     r.accel_g[2] = accADC[0][2] * g_per_count;
+    // Rotate accelerometer into rocket body frame
+    {
+      const float ax = r.accel_g[0];
+      const float ay = r.accel_g[1];
+      const float az = r.accel_g[2];
+      r.accel_g[0] = kImu1Rot[0] * ax + kImu1Rot[1] * ay + kImu1Rot[2] * az;
+      r.accel_g[1] = kImu1Rot[3] * ax + kImu1Rot[4] * ay + kImu1Rot[5] * az;
+      r.accel_g[2] = kImu1Rot[6] * ax + kImu1Rot[7] * ay + kImu1Rot[8] * az;
+    }
+    // Compose orientation with static body->sensor offset
+    {
+      const float q_sensor[4] = {r.quat[0], r.quat[1], r.quat[2], r.quat[3]};
+      float q_out[4];
+      quatMultiply(q_sensor, kImu1QuatB2S, q_out);
+      r.quat[0] = q_out[0];
+      r.quat[1] = q_out[1];
+      r.quat[2] = q_out[2];
+      r.quat[3] = q_out[3];
+    }
     // Internal baro sample: update only when a new BARO event was indicated
     if (evt & 0x08)
     {
