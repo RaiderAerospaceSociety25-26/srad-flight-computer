@@ -16,10 +16,6 @@
 #ifndef LED_MODE_DEFAULT
 #define LED_MODE_DEFAULT 0 // 0=STATUS, 1=SENSORS, 2=TILT
 #endif
-// Enable using the FeatherS3 blue LED for heartbeat/debug patterns
-#ifndef LED_BLUE_HEARTBEAT
-#define LED_BLUE_HEARTBEAT 1
-#endif
 // Zero AGL baseline after this many ms from boot
 #ifndef ZERO_AGL_AFTER_MS
 #define ZERO_AGL_AFTER_MS 10000
