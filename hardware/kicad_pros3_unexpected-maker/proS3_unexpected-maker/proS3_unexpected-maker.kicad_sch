@@ -9,8 +9,8 @@
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
-			(property "Reference" "U"
-				(at 0 -28.956 0)
+			(property "Reference" "U2"
+				(at 0 30.48 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -18,7 +18,7 @@
 				)
 			)
 			(property "Value" "ProS3"
-				(at -0.508 27.178 0)
+				(at 0 27.94 0)
 				(effects
 					(font
 						(size 1.27 1.27)
